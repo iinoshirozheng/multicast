@@ -37,7 +37,7 @@ namespace stream_buffer
              * @param network_receiver Network receiver implementation
              * @param message_processor Message processor implementation
              */
-            BufferProcessor(
+            explicit BufferProcessor(
                 const common::MulticastConfig &config,
                 size_t buffer_size = common::constants::DEFAULT_BUFFER_SIZE * common::constants::MEGA_BYTE,
                 std::unique_ptr<network::INetworkReceiver> network_receiver = nullptr,

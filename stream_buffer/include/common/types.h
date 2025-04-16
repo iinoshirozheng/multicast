@@ -67,7 +67,7 @@ namespace stream_buffer
             std::string interface_ip;
             int recv_buffer_size;
 
-            MulticastConfig(
+            explicit MulticastConfig(
                 SocketDomain domain = SocketDomain::IPV4,
                 SocketType type = SocketType::UDP,
                 int protocol = 0,

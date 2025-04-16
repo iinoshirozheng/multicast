@@ -35,7 +35,7 @@ namespace stream_buffer
          * @param length Length of the BCD data in bytes
          * @return Decoded numeric value, or -1 if decoding failed
          */
-        uint64_t decode_bcd(const void *data, size_t length);
+        long long decode_bcd(const void *data, size_t length);
 
         // Hex dump utility for debugging binary data
         void hex_dump(const void *data, size_t size);

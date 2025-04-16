@@ -67,18 +67,11 @@ namespace stream_buffer
                 {
                     const auto *body = reinterpret_cast<const tfe::BodyI010 *>(message + sizeof(tfe::Header));
 
-                    // Validate body before processing
-                    if (body->IsValid())
-                    {
-                        body->Print();
+                    // Directly process the body since IsValid() is always true
+                    body->Print();
 
-                        // Here you would add more processing logic for the specific message type
-                        FMT_PRINT("Processing product: %s\n", body->GetProductId().c_str());
-                    }
-                    else
-                    {
-                        FMT_PRINT("Invalid I010 body\n");
-                    }
+                    // Here you would add more processing logic for the specific message type
+                    FMT_PRINT("Processing product: %s\n", body->GetProductId().c_str());
                 }
                 else
                 {

@@ -47,8 +47,8 @@ namespace stream_buffer
                     FMT_PRINT("  ESC Code: 0x%02X\n", static_cast<uint8_t>(esc_code));
                     FMT_PRINT("  Trans Code: %c\n", transmission_code);
                     FMT_PRINT("  Message Kind: %c\n", message_kind);
-                    FMT_PRINT("  Info Time: %llu\n", utils::decode_bcd(information_time, sizeof(information_time)));
-                    FMT_PRINT("  Info Seq: %llu\n", utils::decode_bcd(information_seq, sizeof(information_seq)));
+                    FMT_PRINT("  Info Time: %lld\n", utils::decode_bcd(information_time, sizeof(information_time)));
+                    FMT_PRINT("  Info Seq: %lld\n", utils::decode_bcd(information_seq, sizeof(information_seq)));
                     FMT_PRINT("  Version No: %u\n", static_cast<unsigned>(utils::decode_bcd(&version_no, sizeof(version_no))));
                     FMT_PRINT("  Body Length: %u\n", static_cast<unsigned>(utils::decode_bcd(body_length, sizeof(body_length))));
                 }
@@ -81,11 +81,11 @@ namespace stream_buffer
                     // }
 
                     // // Check body length
-                    uint64_t body_size = utils::decode_bcd(body_length, sizeof(body_length));
-                    if (body_size == static_cast<uint64_t>(-1) || body_size > MAX_BODY_SIZE)
+                    long long body_size = utils::decode_bcd(body_length, sizeof(body_length));
+                    if (body_size == -1LL || body_size > static_cast<long long>(MAX_BODY_SIZE))
                     {
-                        FMT_PRINT("Invalid body length: %llu\n",
-                                  body_size == static_cast<uint64_t>(-1) ? 0 : body_size);
+                        FMT_PRINT("Invalid body length: %lld\n",
+                                  body_size == -1LL ? 0LL : body_size);
                         return false;
                     }
 
@@ -98,8 +98,8 @@ namespace stream_buffer
                  */
                 uint32_t GetBodyLength() const
                 {
-                    uint64_t length = utils::decode_bcd(body_length, sizeof(body_length));
-                    if (length == static_cast<uint64_t>(-1))
+                    long long length = utils::decode_bcd(body_length, sizeof(body_length));
+                    if (length == -1LL)
                     {
                         return 0;
                     }
@@ -137,15 +137,15 @@ namespace stream_buffer
                     std::memcpy(prod_id_copy, prod_id_s, sizeof(prod_id_s));
                     FMT_PRINT("Product ID: %s\n", prod_id_copy);
 
-                    FMT_PRINT("Reference Price: %llu\n", utils::decode_bcd(reference_price, sizeof(reference_price)));
+                    FMT_PRINT("Reference Price: %lld\n", utils::decode_bcd(reference_price, sizeof(reference_price)));
                     FMT_PRINT("Product Kind: %c\n", prod_kind);
                     FMT_PRINT("Decimal Locator: %u\n", static_cast<unsigned>(utils::decode_bcd(&decimal_locator, sizeof(decimal_locator))));
                     FMT_PRINT("Strike Price Decimal Locator: %u\n",
                               static_cast<unsigned>(utils::decode_bcd(&strike_price_decimal_locator, sizeof(strike_price_decimal_locator))));
-                    FMT_PRINT("Begin Date: %llu\n", utils::decode_bcd(begin_date, sizeof(begin_date)));
-                    FMT_PRINT("End Date: %llu\n", utils::decode_bcd(end_date, sizeof(end_date)));
+                    FMT_PRINT("Begin Date: %lld\n", utils::decode_bcd(begin_date, sizeof(begin_date)));
+                    FMT_PRINT("End Date: %lld\n", utils::decode_bcd(end_date, sizeof(end_date)));
                     FMT_PRINT("Flow Group: %u\n", static_cast<unsigned>(utils::decode_bcd(&flow_group, sizeof(flow_group))));
-                    FMT_PRINT("Delivery Date: %llu\n", utils::decode_bcd(delivery_date, sizeof(delivery_date)));
+                    FMT_PRINT("Delivery Date: %lld\n", utils::decode_bcd(delivery_date, sizeof(delivery_date)));
                     FMT_PRINT("Dynamic Banding: %c\n", dynamic_banding);
                 }
 
@@ -165,15 +165,15 @@ namespace stream_buffer
                 bool IsValid() const
                 {
                     // Check reference price
-                    if (utils::decode_bcd(reference_price, sizeof(reference_price)) == static_cast<uint64_t>(-1))
+                    if (utils::decode_bcd(reference_price, sizeof(reference_price)) == -1LL)
                     {
                         return false;
                     }
 
                     // Check dates
-                    if (utils::decode_bcd(begin_date, sizeof(begin_date)) == static_cast<uint64_t>(-1) ||
-                        utils::decode_bcd(end_date, sizeof(end_date)) == static_cast<uint64_t>(-1) ||
-                        utils::decode_bcd(delivery_date, sizeof(delivery_date)) == static_cast<uint64_t>(-1))
+                    if (utils::decode_bcd(begin_date, sizeof(begin_date)) == -1LL ||
+                        utils::decode_bcd(end_date, sizeof(end_date)) == -1LL ||
+                        utils::decode_bcd(delivery_date, sizeof(delivery_date)) == -1LL)
                     {
                         return false;
                     }

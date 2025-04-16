@@ -9,25 +9,25 @@ namespace stream_buffer
     {
 
         // Optimized BCD data to integer conversion
-        uint64_t decode_bcd(const void *data, size_t length)
+        long long decode_bcd(const void *data, size_t length)
         {
             if (!data || length == 0)
             {
-                return static_cast<uint64_t>(-1);
+                return -1LL;
             }
 
             // Check for potential overflow - each byte can represent at most 2 decimal digits
-            // uint64_t can represent up to 20 decimal digits (2^64-1 is approximately 10^20)
-            if (length > 10)
-            { // 10 bytes = 20 digits max
+            // long long can represent up to 19 decimal digits (2^63-1 is approximately 9.2*10^18)
+            if (length > 9)
+            { // 9 bytes = 18 digits max
                 FMT_PRINT("BCD data too large, potential overflow: %zu bytes\n", length);
-                return static_cast<uint64_t>(-1);
+                return -1LL;
             }
 
             const uint8_t *bytes = static_cast<const uint8_t *>(data);
-            uint64_t result = 0;
-            constexpr uint64_t max_value = std::numeric_limits<uint64_t>::max();
-            constexpr uint64_t max_div_100 = max_value / 100;
+            long long result = 0;
+            constexpr long long max_value = std::numeric_limits<long long>::max();
+            constexpr long long max_div_100 = max_value / 100;
 
             for (size_t i = 0; i < length; ++i)
             {
@@ -39,14 +39,14 @@ namespace stream_buffer
                 if (high > 9 || low > 9)
                 {
                     FMT_PRINT("Invalid BCD byte: 0x%02X\n", byte);
-                    return static_cast<uint64_t>(-1);
+                    return -1LL;
                 }
 
                 // Check for potential overflow before multiplying by 100
                 if (result > max_div_100)
                 {
                     FMT_PRINT("BCD value too large, overflow detected\n");
-                    return static_cast<uint64_t>(-1);
+                    return -1LL;
                 }
 
                 result = result * 100 + high * 10 + low;
