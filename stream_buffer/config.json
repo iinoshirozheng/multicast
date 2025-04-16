@@ -1,0 +1,7 @@
+{
+    "group_ip": "225.0.0.1",
+    "interface": "en049.135",
+    "local_ip": "10.71.205.68",
+    "port": 10000,
+    "buffer_size_mb": 200
+}
