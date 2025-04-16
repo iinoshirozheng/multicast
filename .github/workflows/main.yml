@@ -1,13 +1,10 @@
-name: C++ CI with CMake
+name: C++ CI with Makefile
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
-env:
-  BUILD_TYPE: Release
 
 jobs:
   build:
@@ -16,27 +13,38 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        compiler: [gcc, clang]
+        compiler: [g++, clang++]
         exclude:
           # Exclude gcc on macOS
           - os: macos-latest
-            compiler: gcc
+            compiler: g++
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-      env:
-        CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
-        CXX: ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+    - name: Install dependencies
+      run: |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get update
+          sudo apt-get install -y make g++ clang
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          brew install make llvm
+        fi
+      shell: bash
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: |
+        cd stream_buffer
+        make all
+      env:
+        CXX: ${{ matrix.compiler }}
 
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+    - name: Run tests
+      run: |
+        cd stream_buffer
+        make test
+      env:
+        CXX: ${{ matrix.compiler }}
       
   static-analysis:
     runs-on: ubuntu-latest
@@ -54,19 +62,24 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Configure CMake with Coverage
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
-      
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build
-      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lcov g++
+    
+    - name: Build with coverage
+      run: |
+        cd stream_buffer
+        make debug CXXFLAGS="-std=c++17 -Wall -Wextra -Wpedantic -O0 -g --coverage -pthread"
+    
     - name: Run tests with coverage
-      working-directory: ${{github.workspace}}/build
-      run: ctest
+      run: |
+        cd stream_buffer
+        make test CXXFLAGS="-std=c++17 -Wall -Wextra -Wpedantic -O0 -g --coverage -pthread"
 
     - name: Generate coverage report
-      working-directory: ${{github.workspace}}/build
       run: |
+        cd stream_buffer
         lcov --directory . --capture --output-file coverage.info
         lcov --remove coverage.info '/usr/*' --output-file coverage.info
-        lcov --list coverage.info 
+        lcov --list coverage.info
