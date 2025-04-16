@@ -38,27 +38,25 @@ namespace stream_buffer
                 return true;
             }
 
-            bool JoinMulticastGroupInternal(int socket_id, const char *multi_ip, const char *if_ip)
+            bool JoinMulticastGroupInternal(int socket_id, const char *group_ip, const char *if_ip)
             {
-                if (!multi_ip || multi_ip[0] == '\0')
+                if (!group_ip || group_ip[0] == '\0')
                 {
                     FMT_PRINT("Invalid multicast IP\n");
                     return false;
                 }
 
                 struct ip_mreq mreq = {};
-                mreq.imr_multiaddr.s_addr = inet_addr(multi_ip);
+                mreq.imr_multiaddr.s_addr = inet_addr(group_ip);
                 mreq.imr_interface.s_addr = inet_addr(if_ip);
 
                 if (setsockopt(socket_id, IPPROTO_IP, IP_ADD_MEMBERSHIP,
                                &mreq, sizeof(mreq)) < 0)
                 {
-                    FMT_PRINT("Failed to join multicast group %u.%u.%u.%u: %s\n",
-                              ((uint8_t *)&mreq.imr_multiaddr.s_addr)[0],
-                              ((uint8_t *)&mreq.imr_multiaddr.s_addr)[1],
-                              ((uint8_t *)&mreq.imr_multiaddr.s_addr)[2],
-                              ((uint8_t *)&mreq.imr_multiaddr.s_addr)[3],
-                              strerror(errno));
+                    char ip_str[INET_ADDRSTRLEN];
+                    inet_ntop(AF_INET, &(mreq.imr_multiaddr), ip_str, INET_ADDRSTRLEN);
+                    FMT_PRINT("Failed to join multicast group %s: %s\n",
+                              ip_str, strerror(errno));
                     return false;
                 }
                 return true;
@@ -96,23 +94,23 @@ namespace stream_buffer
 
         // Join multicast group and set up socket
         int JoinMulticastGroup(
-            int socket_id,
-            const std::string &multi_ip,
+            int socket_fd,
+            const std::string &group_ip,
             int port,
-            const std::string &if_name,
-            const std::string &if_ip)
+            const std::string &interface_name,
+            const std::string &interface_ip)
         {
             // Mark unused parameter to avoid compiler warning
-            (void)if_name;
+            (void)interface_name;
 
             // Set socket options for multicast reception
-            if (!SetReuseAddress(socket_id) ||
-                !SetReceiveBuffer(socket_id) ||
-                !JoinMulticastGroupInternal(socket_id, multi_ip.c_str(), if_ip.c_str()) ||
-                !SetMulticastLoopback(socket_id) ||
-                !BindSocket(socket_id, port))
+            if (!SetReuseAddress(socket_fd) ||
+                !SetReceiveBuffer(socket_fd) ||
+                !JoinMulticastGroupInternal(socket_fd, group_ip.c_str(), interface_ip.c_str()) ||
+                !SetMulticastLoopback(socket_fd) ||
+                !BindSocket(socket_fd, port))
             {
-                close(socket_id);
+                close(socket_fd);
                 return common::constants::JOIN_FAILED;
             }
 
@@ -126,7 +124,7 @@ namespace stream_buffer
             int socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
             if (socket_fd < 0)
             {
-                std::cerr << "Failed to create socket: " << strerror(errno) << std::endl;
+                FMT_PRINT("Failed to create socket: %s\n", strerror(errno));
                 return -1;
             }
 
@@ -134,8 +132,7 @@ namespace stream_buffer
             int reuse = 1;
             if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
             {
-                std::cerr << "Failed to set socket option SO_REUSEADDR: "
-                          << strerror(errno) << std::endl;
+                FMT_PRINT("Failed to set socket option SO_REUSEADDR: %s\n", strerror(errno));
                 close(socket_fd);
                 return -1;
             }
@@ -144,7 +141,7 @@ namespace stream_buffer
             // Set SO_REUSEPORT if available
             if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse)) < 0)
             {
-                std::cerr << "Error setting SO_REUSEPORT: " << strerror(errno) << std::endl;
+                FMT_PRINT("Error setting SO_REUSEPORT: %s\n", strerror(errno));
                 // Not critical, continue
             }
 #endif
@@ -156,8 +153,7 @@ namespace stream_buffer
                 if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVBUF,
                                &buffer_size, sizeof(buffer_size)) < 0)
                 {
-                    std::cerr << "Failed to set socket option SO_RCVBUF: "
-                              << strerror(errno) << std::endl;
+                    FMT_PRINT("Failed to set socket option SO_RCVBUF: %s\n", strerror(errno));
                     close(socket_fd);
                     return -1;
                 }
@@ -172,7 +168,7 @@ namespace stream_buffer
 
             if (bind(socket_fd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) < 0)
             {
-                std::cerr << "Failed to bind socket: " << strerror(errno) << std::endl;
+                FMT_PRINT("Failed to bind socket: %s\n", strerror(errno));
                 close(socket_fd);
                 return -1;
             }
@@ -242,7 +238,10 @@ namespace stream_buffer
         std::string MulticastReceiver::GetSourceIP() const
         {
             char ip_str[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &(src_addr_.sin_addr), ip_str, INET_ADDRSTRLEN);
+            if (inet_ntop(AF_INET, &(src_addr_.sin_addr), ip_str, INET_ADDRSTRLEN) == nullptr)
+            {
+                return "unknown";
+            }
             return std::string(ip_str);
         }
 
