@@ -1,4 +1,4 @@
-name: C++ CI with CentOS 7
+name: C++ CI with Ubuntu Latest
 
 on:
   push:
@@ -9,24 +9,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: 
-      image: centos:7
     steps:
-    - name: Install Git
-      run: |
-        yum install -y git
-    
     - uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |
-        # Enable SCL repository for GCC 11
-        yum install -y centos-release-scl
-        yum install -y devtoolset-11 make
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc-11 g++-11 make
         
-        # Permanently enable GCC 11
-        echo "source /opt/rh/devtoolset-11/enable" >> $HOME/.bashrc
-        source /opt/rh/devtoolset-11/enable
+        # Set GCC 11 as default
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
         
         # Verify GCC version
         gcc --version
@@ -44,14 +37,12 @@ jobs:
 
     - name: Check C++11 compatibility
       run: |
-        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
         make cpp11-check
       shell: bash
 
     - name: Build
       run: |
-        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
         make clean # Ensure clean build
         make all
@@ -59,61 +50,46 @@ jobs:
 
     - name: Run tests
       run: |
-        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
         make test
       shell: bash
       
   static-analysis:
     runs-on: ubuntu-latest
-    container:
-      image: centos:7
     steps:
-    - name: Install Git
-      run: |
-        yum install -y git
-    
     - uses: actions/checkout@v3
     
     - name: Install cppcheck and dependencies
       run: |
-        yum install -y epel-release
-        yum install -y cppcheck
+        sudo apt-get update
+        sudo apt-get install -y cppcheck
       
     - name: Run cppcheck
       run: |
         cppcheck --enable=all --suppress=missingIncludeSystem --error-exitcode=1 -I stream_buffer/include --suppress=unusedFunction stream_buffer/
         
-    - name: Install additional static analyzers (if available)
+    - name: Install additional static analyzers
       continue-on-error: true
       run: |
-        yum install -y clang-tools-extra || echo "clang-tools not available, skipping"
+        sudo apt-get install -y clang-tools || echo "clang-tools not available, skipping"
       
   code-coverage:
     runs-on: ubuntu-latest
-    container:
-      image: centos:7
     steps:
-    - name: Install Git
-      run: |
-        yum install -y git
-    
     - uses: actions/checkout@v3
     
     - name: Install dependencies
       run: |
-        # Enable SCL repository for GCC 11
-        yum install -y centos-release-scl epel-release
-        yum install -y devtoolset-11 make lcov
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc-11 g++-11 make lcov
         
-        # Permanently enable GCC 11
-        echo "source /opt/rh/devtoolset-11/enable" >> $HOME/.bashrc
-        source /opt/rh/devtoolset-11/enable
+        # Set GCC 11 as default
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
       shell: bash
     
     - name: Build with coverage
       run: |
-        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
         make clean # Ensure clean build for accurate coverage
         make debug CXXFLAGS="-std=c++11 -Wall -Wextra -Wpedantic -O0 -g --coverage -pthread"
@@ -121,14 +97,12 @@ jobs:
     
     - name: Run tests with coverage
       run: |
-        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
         make test CXXFLAGS="-std=c++11 -Wall -Wextra -Wpedantic -O0 -g --coverage -pthread"
       shell: bash
 
     - name: Generate coverage report
       run: |
-        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
         lcov --directory . --capture --output-file coverage.info
         lcov --remove coverage.info '/usr/*' --output-file coverage.info
