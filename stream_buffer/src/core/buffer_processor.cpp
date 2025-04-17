@@ -168,7 +168,9 @@ namespace stream_buffer
                     else if (errno == EINTR || errno == EAGAIN)
                     {
                         // Handle temporary errors with select
-                        timeval timeout = {.tv_sec = 1, .tv_usec = 0};
+                        timeval timeout;
+                        timeout.tv_sec = 1;
+                        timeout.tv_usec = 0;
                         fd_set read_set;
                         FD_ZERO(&read_set);
                         FD_SET(processor->socket_id_, &read_set);
