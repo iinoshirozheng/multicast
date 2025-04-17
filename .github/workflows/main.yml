@@ -40,6 +40,12 @@ jobs:
         cd stream_buffer
         make cpp11-check
       shell: bash
+      
+    - name: Run comprehensive C++11 compatibility check
+      run: |
+        chmod +x ./verify_cpp11.sh
+        ./verify_cpp11.sh
+      shell: bash
 
     - name: Build
       run: |
