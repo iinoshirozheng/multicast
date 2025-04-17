@@ -33,8 +33,8 @@ namespace stream_buffer
             size_t buffer_size,
             std::unique_ptr<network::INetworkReceiver> network_receiver,
             std::unique_ptr<core::IMessageProcessor> message_processor)
-            : buffer_(std::make_unique<Buffer>(buffer_size, std::make_unique<processing::TFEProcessor>())),
-              sync_(std::make_unique<ThreadSync>()),
+            : buffer_(new Buffer(buffer_size, std::unique_ptr<processing::TFEProcessor>(new processing::TFEProcessor()))),
+              sync_(new ThreadSync()),
               config_(config)
         {
             // Create default implementations if not provided
@@ -50,7 +50,7 @@ namespace stream_buffer
 
             if (!message_processor)
             {
-                message_processor_ = std::make_unique<TFEMessageProcessor>(buffer_.get());
+                message_processor_.reset(new TFEMessageProcessor(buffer_.get()));
             }
             else
             {
@@ -89,7 +89,7 @@ namespace stream_buffer
             }
 
             // Create network receiver with socket
-            network_receiver_ = std::make_unique<network::MulticastReceiver>(socket_id_);
+            network_receiver_.reset(new network::MulticastReceiver(socket_id_));
 
             // Start processing
             running_ = true;

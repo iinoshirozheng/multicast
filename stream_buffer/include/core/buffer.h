@@ -37,21 +37,21 @@ namespace stream_buffer
             Buffer &operator=(Buffer &&) noexcept;
 
             // Buffer state queries
-            [[nodiscard]] size_t GetUsedSize() const;
-            [[nodiscard]] size_t GetQueuedSize() const;
-            [[nodiscard]] size_t GetAvailableSize() const;
-            [[nodiscard]] size_t GetTotalCapacity() const;
+            size_t GetUsedSize() const;
+            size_t GetQueuedSize() const;
+            size_t GetAvailableSize() const;
+            size_t GetTotalCapacity() const;
 
             // Buffer pointers for direct access
-            [[nodiscard]] char *GetBufferEndPtr() const;
-            [[nodiscard]] char *GetBufferTopPtr() const;
-            [[nodiscard]] size_t GetBufferTop() const;
-            [[nodiscard]] size_t GetBufferEnd() const;
+            char *GetBufferEndPtr() const;
+            char *GetBufferTopPtr() const;
+            size_t GetBufferTop() const;
+            size_t GetBufferEnd() const;
 
             // State predicates
-            [[nodiscard]] bool IsEmpty() const;
-            [[nodiscard]] bool ShouldCompact() const;
-            [[nodiscard]] bool HasPendingData() const;
+            bool IsEmpty() const;
+            bool ShouldCompact() const;
+            bool HasPendingData() const;
 
             // Buffer operations
             void CompactBuffer();

@@ -104,7 +104,7 @@ namespace stream_buffer
         {
             top_ = 0;
             end_ = 0;
-            buffer_ = std::make_unique<char[]>(size);
+            buffer_.reset(new char[size]);
         }
 
         void Buffer::Reset()

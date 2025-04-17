@@ -82,10 +82,10 @@ namespace stream_buffer
 
                     // // Check body length
                     long long body_size = utils::decode_bcd(body_length, sizeof(body_length));
-                    if (body_size == -1LL || body_size > static_cast<long long>(MAX_BODY_SIZE))
+                    if (body_size < 0 || static_cast<size_t>(body_size) > MAX_BODY_SIZE)
                     {
                         FMT_PRINT("Invalid body length: %lld\n",
-                                  body_size == -1LL ? 0LL : body_size);
+                                  body_size < 0 ? 0LL : body_size);
                         return false;
                     }
 
@@ -99,7 +99,7 @@ namespace stream_buffer
                 uint32_t GetBodyLength() const
                 {
                     long long length = utils::decode_bcd(body_length, sizeof(body_length));
-                    if (length == -1LL)
+                    if (length < 0)
                     {
                         return 0;
                     }
@@ -165,15 +165,15 @@ namespace stream_buffer
                 bool IsValid() const
                 {
                     // Check reference price
-                    if (utils::decode_bcd(reference_price, sizeof(reference_price)) == -1LL)
+                    if (utils::decode_bcd(reference_price, sizeof(reference_price)) < 0)
                     {
                         return false;
                     }
 
                     // Check dates
-                    if (utils::decode_bcd(begin_date, sizeof(begin_date)) == -1LL ||
-                        utils::decode_bcd(end_date, sizeof(end_date)) == -1LL ||
-                        utils::decode_bcd(delivery_date, sizeof(delivery_date)) == -1LL)
+                    if (utils::decode_bcd(begin_date, sizeof(begin_date)) < 0 ||
+                        utils::decode_bcd(end_date, sizeof(end_date)) < 0 ||
+                        utils::decode_bcd(delivery_date, sizeof(delivery_date)) < 0)
                     {
                         return false;
                     }

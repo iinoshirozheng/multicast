@@ -8,7 +8,14 @@ description:
 globs: **/*.c,**/*.cpp,**/*.h,**/*.hpp,**/*.cxx,CMakeLists.txt,*.cmake,conanfile.txt,Makefil,**/*.cc
 alwaysApply: false
 ---
-# C++ Programming Guidelines
+# C++ Programming Guidelines for CentOS 7 Environment
+
+## Environment Specifics
+
+- GCC 11 compiler on CentOS 7
+- C++11 standard (avoid C++14/17/20 features)
+- POSIX-compliant system
+- Makefile-based build system
 
 ## Basic Principles
 
@@ -18,6 +25,8 @@ alwaysApply: false
 - Use Doxygen style comments to document public classes and methods.
 - Don't leave blank lines within a function.
 - Follow the one-definition rule (ODR).
+- Ensure backward compatibility with CentOS 7 libraries.
+- Refer to [Google C++ Style Guide.pdf](mdc:document /Google C++ Style Guide.pdf)
 
 ## Nomenclature
 
@@ -47,7 +56,7 @@ alwaysApply: false
   - Early checks and returns.
   - Extraction to utility functions.
 - Use standard library algorithms (std::for_each, std::transform, std::find, etc.) to avoid function nesting.
-- Use lambda functions for simple operations.
+- Use lambda functions sparingly (remember C++11 limitations on lambdas).
 - Use named functions for non-simple operations.
 - Use default parameter values instead of checking for null or nullptr.
 - Reduce function parameters using structs or classes
@@ -62,19 +71,19 @@ alwaysApply: false
 - Avoid data validations in functions and use classes with internal validation.
 - Prefer immutability for data.
 - Use const for data that doesn't change.
-- Use constexpr for compile-time constants.
-- Use std::optional for possibly null values.
+- Use constexpr for compile-time constants where supported.
+- For nullable values, use careful pointer handling (std::optional not available in C++11).
 
 ## Classes
 
 - Follow SOLID principles.
 - Prefer composition over inheritance.
-- Declare interfaces as abstract classes or concepts.
+- Declare interfaces as abstract classes.
 - Write small classes with a single purpose.
   - Less than 200 instructions.
   - Less than 10 public methods.
   - Less than 10 properties.
-- Use the Rule of Five (or Rule of Zero) for resource management.
+- Use the Rule of Three (C++11) for resource management.
 - Make member variables private and provide getters/setters where necessary.
 - Use const-correctness for member functions.
 
@@ -85,7 +94,7 @@ alwaysApply: false
   - Fix an expected problem.
   - Add context.
   - Otherwise, use a global handler.
-- Use std::optional, std::expected, or error codes for expected failures.
+- Use custom return types or error codes for expected failures.
 
 ## Memory Management
 
@@ -93,6 +102,7 @@ alwaysApply: false
 - Use RAII (Resource Acquisition Is Initialization) principles.
 - Avoid memory leaks by proper resource management.
 - Use std::vector and other standard containers instead of C-style arrays.
+- Be careful with move semantics (new in C++11).
 
 ## Testing
 
@@ -114,20 +124,34 @@ alwaysApply: false
   - test/ for test files
   - lib/ for libraries
   - doc/ for documentation
-- Use CMake or similar build system.
+- Use Makefile for build system
+  - Define clear targets for build, test, clean
+  - Use variables for compiler settings and paths
+  - Include dependency handling
 - Separate interface (.h) from implementation (.cpp).
 - Use namespaces to organize code logically.
 - Create a core namespace for foundational components.
 - Create a utils namespace for utility functions.
 
+## Makefile Guidelines
+
+- Use variables for compiler and flags: `CXX`, `CXXFLAGS`, etc.
+- Set explicit C++11 standard: `-std=c++11`
+- Include warning flags: `-Wall -Wexarate targets for debug/release builds
+- Use pattern rules for compiling source files
+- Include phony targets (.PHONY)
+- Set up proper dependency handling
+- Create test targets
+- Consider compatibility with older Make versions on CentOS 7
+
 ## Standard Library
 
-- Use the C++ Standard Library whenever possible.
+- Use the C++11 Standard Library.
 - Prefer std::string over C-style strings.
 - Use std::vector, std::map, std::unordered_map, etc. for collections.
-- Use std::optional, std::variant, std::any for modern type safety.
-- Use std::filesystem for file operations.
-- Use std::chrono for time-related operations.
+- Use std::unique_ptr and std::shared_ptr for smart pointers.
+- Use boost libraries for functionality not in C++11 when needed.
+- Use the appropriate threading primitives for concurrency.
 
 ## Concurrency
 
@@ -136,11 +160,13 @@ alwaysApply: false
 - Use std::atomic for atomic operations.
 - Avoid data races by proper synchronization.
 - Use thread-safe data structures when necessary.
+- Be aware of threading limitations in older library versions.
 
-## Refer to
-- [Google C++ Style Guide.html](mdc:Google C++ Style Guide.html)
+## CentOS 7 Specific Guidelines
 
-
-
-
-
+- Be aware of library and system call compatibility
+- Use devtoolset-11 for GCC 11 support
+- Test on CentOS 7 environment regularly
+- Minimize dependencies on system libraries
+- Watch for ABI compatibility issues
+- Consider creating Github Action

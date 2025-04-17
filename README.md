@@ -14,15 +14,43 @@ A high-performance, thread-safe buffer implementation for multicast network pack
 
 - C++11 or later
 - POSIX-compliant system (Linux, macOS)
-- CMake 3.10 or later
+- GCC 11 recommended (via devtoolset-11 on CentOS 7)
 
 ## Building
+
+### Using Makefile (Recommended for CentOS 7)
+
+```bash
+cd stream_buffer
+make
+```
+
+### Using CMake
 
 ```bash
 mkdir build
 cd build
 cmake ..
 make
+```
+
+### CentOS 7 Docker Environment
+
+For testing compatibility with CentOS 7 and GCC 11, you can use the provided Docker environment:
+
+```bash
+# Build the Docker image
+docker build -t stream_buffer:centos7 .
+
+# Run the container with an interactive shell
+docker run -it stream_buffer:centos7
+
+# Inside the container, build and test the project
+cd /app/stream_buffer
+make clean
+make cpp11-check  # Verify C++11 compatibility
+make
+make test
 ```
 
 ## Usage
@@ -81,4 +109,4 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
 
 ## CI/CD
-![C++ CI with CMake](https://github.com/iinoshirozheng/stream_buffer/actions/workflows/cmake.yml/badge.svg)
+![C++ CI with CentOS 7](https://github.com/iinoshirozheng/stream_buffer/actions/workflows/main.yml/badge.svg)

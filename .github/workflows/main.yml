@@ -1,4 +1,4 @@
-name: C++ CI with Makefile
+name: C++ CI with CentOS 7
 
 on:
   push:
@@ -8,78 +8,135 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        compiler: [g++, clang++]
-        exclude:
-          # Exclude gcc on macOS
-          - os: macos-latest
-            compiler: g++
-
+    runs-on: ubuntu-latest
+    container: 
+      image: centos:7
     steps:
+    - name: Install Git
+      run: |
+        yum install -y git
+    
     - uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |
-        if [ "$RUNNER_OS" == "Linux" ]; then
-          sudo apt-get update
-          sudo apt-get install -y make g++ clang
-        elif [ "$RUNNER_OS" == "macOS" ]; then
-          brew install make llvm
-        fi
+        # Enable SCL repository for GCC 11
+        yum install -y centos-release-scl
+        yum install -y devtoolset-11 make
+        
+        # Permanently enable GCC 11
+        echo "source /opt/rh/devtoolset-11/enable" >> $HOME/.bashrc
+        source /opt/rh/devtoolset-11/enable
+        
+        # Verify GCC version
+        gcc --version
+        g++ --version
+      shell: bash
+
+    - name: Cache build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          stream_buffer/build
+        key: ${{ runner.os }}-build-${{ hashFiles('stream_buffer/**/*.cpp', 'stream_buffer/**/*.h', 'stream_buffer/Makefile') }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+
+    - name: Check C++11 compatibility
+      run: |
+        source /opt/rh/devtoolset-11/enable
+        cd stream_buffer
+        make cpp11-check
       shell: bash
 
     - name: Build
       run: |
+        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
+        make clean # Ensure clean build
         make all
-      env:
-        CXX: ${{ matrix.compiler }}
+      shell: bash
 
     - name: Run tests
       run: |
+        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
         make test
-      env:
-        CXX: ${{ matrix.compiler }}
+      shell: bash
       
   static-analysis:
     runs-on: ubuntu-latest
+    container:
+      image: centos:7
     steps:
+    - name: Install Git
+      run: |
+        yum install -y git
+    
     - uses: actions/checkout@v3
     
-    - name: Install cppcheck
-      run: sudo apt-get update && sudo apt-get install -y cppcheck
+    - name: Install cppcheck and dependencies
+      run: |
+        yum install -y epel-release
+        yum install -y cppcheck
       
     - name: Run cppcheck
-      run: cppcheck --enable=all --suppress=missingIncludeSystem --error-exitcode=1 -I stream_buffer/include --suppress=unusedFunction stream_buffer/
+      run: |
+        cppcheck --enable=all --suppress=missingIncludeSystem --error-exitcode=1 -I stream_buffer/include --suppress=unusedFunction stream_buffer/
+        
+    - name: Install additional static analyzers (if available)
+      continue-on-error: true
+      run: |
+        yum install -y clang-tools-extra || echo "clang-tools not available, skipping"
       
   code-coverage:
     runs-on: ubuntu-latest
+    container:
+      image: centos:7
     steps:
+    - name: Install Git
+      run: |
+        yum install -y git
+    
     - uses: actions/checkout@v3
     
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y lcov g++
+        # Enable SCL repository for GCC 11
+        yum install -y centos-release-scl epel-release
+        yum install -y devtoolset-11 make lcov
+        
+        # Permanently enable GCC 11
+        echo "source /opt/rh/devtoolset-11/enable" >> $HOME/.bashrc
+        source /opt/rh/devtoolset-11/enable
+      shell: bash
     
     - name: Build with coverage
       run: |
+        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
-        make debug CXXFLAGS="-std=c++17 -Wall -Wextra -Wpedantic -O0 -g --coverage -pthread"
+        make clean # Ensure clean build for accurate coverage
+        make debug CXXFLAGS="-std=c++11 -Wall -Wextra -Wpedantic -O0 -g --coverage -pthread"
+      shell: bash
     
     - name: Run tests with coverage
       run: |
+        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
-        make test CXXFLAGS="-std=c++17 -Wall -Wextra -Wpedantic -O0 -g --coverage -pthread"
+        make test CXXFLAGS="-std=c++11 -Wall -Wextra -Wpedantic -O0 -g --coverage -pthread"
+      shell: bash
 
     - name: Generate coverage report
       run: |
+        source /opt/rh/devtoolset-11/enable
         cd stream_buffer
         lcov --directory . --capture --output-file coverage.info
         lcov --remove coverage.info '/usr/*' --output-file coverage.info
         lcov --list coverage.info
+      shell: bash
+      
+    - name: Archive coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage-report
+        path: stream_buffer/coverage.info

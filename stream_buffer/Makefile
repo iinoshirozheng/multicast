@@ -1,6 +1,7 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -Wpedantic -O3 -pthread
+CXXFLAGS = -std=c++11 -Wall -Wextra -Wpedantic -O3 -pthread
 DEBUG_FLAGS = -g -DDEBUG
+CPP11_CHECK_FLAGS = -std=c++11 -pedantic-errors -Wextra -Werror
 
 # Directories
 SRC_DIR = src
@@ -36,7 +37,7 @@ TEST_OBJECTS = $(patsubst $(TEST_DIR)/%.cpp,$(BUILD_DIR)/test/%.o,$(TEST_SOURCES
 TEST_TARGET = $(BUILD_DIR)/run_tests
 
 # Targets
-.PHONY: all clean debug test dirs
+.PHONY: all clean debug test dirs cpp11-check
 
 all: dirs $(TARGET)
 
@@ -67,6 +68,15 @@ test: dirs $(OBJECTS) $(TEST_OBJECTS)
 # Debug build
 debug: CXXFLAGS += $(DEBUG_FLAGS)
 debug: all
+
+# C++11 syntax check
+cpp11-check:
+	@echo "Checking C++11 compatibility..."
+	@for file in $(SOURCES) $(MAIN) $(TEST_SOURCES); do \
+		echo "Checking $$file"; \
+		$(CXX) $(CPP11_CHECK_FLAGS) $(INCLUDES) -fsyntax-only $$file || exit 1; \
+	done
+	@echo "All files passed C++11 compatibility check"
 
 # Clean build files
 clean:
